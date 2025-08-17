@@ -5,14 +5,23 @@ A comprehensive cookiecutter template for modern Python projects with unified de
 ## Features
 
 🚀 **Modern Python 3.12+** with comprehensive type hints and modern syntax
-📦 **Unified Development Experience** with pixi task management  
+
+📦 **Unified Development Experience** with pixi task management
+
 🧪 **Comprehensive Testing** with pytest, hypothesis, and async support
+
 🔍 **Code Quality Enforcement** with ruff, mypy (100% compliance required)
+
 ⚡ **Optional Async Support** for high-performance applications
+
 🗄️ **Database Integration** (MongoDB, PostgreSQL, SQLite options)
+
 📚 **Beautiful Documentation** with MkDocs Material
+
 🔒 **Security Scanning** with bandit and safety
+
 🤖 **Automated CI/CD** with GitHub Actions
+
 📋 **Claude Code Integration** with comprehensive CLAUDE.md
 
 ## Quick Start
@@ -26,7 +35,7 @@ pip install cookiecutter
 ### Generate Project
 
 ```bash
-cookiecutter https://github.com/yourusername/python-project-template
+cookiecutter https://github.com/jesserobertson/vibe-py-cookiecutter
 ```
 
 ### Setup Development Environment
