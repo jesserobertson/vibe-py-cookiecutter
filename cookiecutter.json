@@ -13,6 +13,7 @@
     "database_backend": ["none", "mongodb", "postgresql", "sqlite"],
     "include_docker": ["yes", "no"],
     "use_hypothesis": ["yes", "no"],
+    "use_logerr": ["yes", "no"],
     "documentation_tool": ["mkdocs-material", "sphinx"],
     
     "license": [

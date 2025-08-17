@@ -64,6 +64,7 @@ The template supports various configuration options:
 - **Async Support**: Optional asyncio integration
 - **Database Backend**: MongoDB, PostgreSQL, SQLite, or none
 - **Testing Framework**: Pytest with optional Hypothesis
+- **Error Handling**: Optional logerr for Rust-like Result/Option types
 - **Documentation**: MkDocs Material or Sphinx
 - **License**: MIT, Apache-2.0, BSD-3-Clause, GPL-3.0, or Proprietary
 - **Docker Support**: Optional containerization for databases

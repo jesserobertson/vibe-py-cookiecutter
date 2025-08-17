@@ -9,6 +9,10 @@ platforms = ["osx-arm64", "linux-64", "win-64"]
 python = ">=3.12,<3.13"
 # Core dependencies
 tenacity = ">=9.1.2,<10"
+{%- if cookiecutter.use_logerr == "yes" %}
+# Install logerr from GitHub via pip
+pip = "*"
+{%- endif %}
 {%- if cookiecutter.database_backend == "mongodb" %}
 pymongo = ">=4.0.0,<5"
 {%- if cookiecutter.use_async == "yes" %}
@@ -55,6 +59,11 @@ mkdocstrings-python = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
 sphinx-autodoc-typehints = "*"
+{%- endif %}
+
+{%- if cookiecutter.use_logerr == "yes" %}
+[pypi-dependencies]
+logerr = { git = "https://github.com/jesserobertson/logerr.git" }
 {%- endif %}
 
 [environments]

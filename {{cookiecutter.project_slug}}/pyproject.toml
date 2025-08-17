@@ -19,6 +19,9 @@ classifiers = [
 
 dependencies = [
     "tenacity>=9.1.2,<10",
+{%- if cookiecutter.use_logerr == "yes" %}
+    "logerr @ git+https://github.com/jesserobertson/logerr.git",
+{%- endif %}
 {%- if cookiecutter.database_backend == "mongodb" %}
     "pymongo>=4.0.0,<5",
 {%- if cookiecutter.use_async == "yes" %}
@@ -173,7 +176,7 @@ pythonpath = ["."]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
 {%- endif %}
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "slow: marks tests as slow (deselect with '-m \\\"not slow\\\"')",
     "integration: marks tests as integration tests", 
     "unit: marks tests as unit tests",
 {%- if cookiecutter.use_hypothesis == "yes" %}

@@ -133,9 +133,13 @@ pixi run check-all                # Run all tests + quality checks
 - **Explicit over implicit**: Clear function signatures and parameters
 - **Type safety first**: Full mypy coverage with strict settings
 - **Error handling**: Proper exception handling and informative error messages
+{%- if cookiecutter.use_logerr == "yes" %}
+- **Functional error handling**: Use logerr Result and Option types for robust error management
+{%- endif %}
 {%- if cookiecutter.use_async == "yes" %}
 - **Async compatibility**: Consistent APIs between sync and async versions
 {%- endif %}
+- **Modern Python patterns**: Use match statements, union types, and built-in generics
 - **Documentation**: Comprehensive docstrings with examples
 - **Testing**: Every public function should have comprehensive tests
 
@@ -188,6 +192,108 @@ def process_items(
     else:
         return handle_error(result.error)
 ```
+
+{%- if cookiecutter.use_logerr == "yes" %}
+
+## Logerr Integration
+
+This project uses **logerr** for functional error handling with automatic logging. Logerr provides Rust-like Result and Option types for Python.
+
+### Key Features
+- **Result<T, E>**: Explicit success/error handling without exceptions
+- **Option<T>**: Safe null handling without None checks
+- **Automatic logging**: Built-in error logging with context
+- **Method chaining**: Functional composition of operations
+- **Type safety**: Full mypy integration
+
+### Result Type Usage
+
+Use Result types for operations that can fail:
+
+```python
+from logerr import Result, Ok, Err
+
+def load_config(path: str) -> Result[dict, str]:
+    """Load configuration with explicit error handling."""
+    try:
+        with open(path) as f:
+            import json
+            config = json.load(f)
+        return Ok(config)
+    except FileNotFoundError:
+        return Err(f"Config file not found: {path}")
+    except json.JSONDecodeError as e:
+        return Err(f"Invalid JSON in {path}: {e}")
+
+# Usage with method chaining
+result = (
+    load_config("config.json")
+    .map(lambda cfg: cfg.get("database", {}))
+    .and_then(validate_database_config)
+    .map_err(lambda e: f"Database config error: {e}")
+)
+
+match result:
+    case Ok(db_config):
+        print(f"Using database: {db_config}")
+    case Err(error):
+        print(f"Configuration failed: {error}")
+```
+
+### Option Type Usage
+
+Use Option types for values that may or may not exist:
+
+```python
+from logerr import Option, Some, NothingT
+
+def find_user_by_id(user_id: int) -> Option[dict]:
+    """Find user by ID, returning Option instead of None."""
+    user = database.get_user(user_id)
+    return Some(user) if user else NothingT()
+
+# Usage with pattern matching
+match find_user_by_id(123):
+    case Some(user):
+        print(f"Found user: {user['name']}")
+    case NothingT():
+        print("User not found")
+```
+
+### Integration Patterns
+
+**Database Operations:**
+```python
+def get_user_settings(user_id: int) -> Result[dict, str]:
+    return (
+        find_user_by_id(user_id)
+        .ok_or("User not found")
+        .and_then(lambda user: load_user_settings(user["id"]))
+        .map_err(lambda e: f"Settings error for user {user_id}: {e}")
+    )
+```
+
+**API Responses:**
+```python
+async def handle_user_request(user_id: int) -> dict:
+    result = await get_user_data(user_id)
+    
+    match result:
+        case Ok(user_data):
+            return {"status": "success", "data": user_data}
+        case Err(error):
+            return {"status": "error", "message": str(error)}
+```
+
+### Logerr Best Practices
+
+1. **Use Result for all fallible operations**: Database calls, file I/O, network requests
+2. **Chain operations functionally**: Use `map`, `and_then`, `map_err` for composition
+3. **Handle errors explicitly**: Always pattern match on Result/Option types
+4. **Provide meaningful error context**: Use `map_err` to add context at each level
+5. **Leverage automatic logging**: Logerr logs errors automatically with stack traces
+
+{%- endif %}
 
 ## Development Practices
 
