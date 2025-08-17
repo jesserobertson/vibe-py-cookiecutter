@@ -1,0 +1,47 @@
+{
+    "project_name": "My Awesome Project",
+    "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
+    "package_name": "{{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}",
+    "project_description": "A modern Python project with comprehensive tooling",
+    "author_name": "Your Name",
+    "author_email": "you@example.com",
+    "github_username": "yourusername",
+    "python_version": "3.12",
+    "version": "0.1.0",
+    
+    "use_async": ["yes", "no"],
+    "database_backend": ["none", "mongodb", "postgresql", "sqlite"],
+    "include_docker": ["yes", "no"],
+    "use_hypothesis": ["yes", "no"],
+    "documentation_tool": ["mkdocs-material", "sphinx"],
+    
+    "license": [
+        "MIT",
+        "Apache-2.0", 
+        "BSD-3-Clause",
+        "GPL-3.0",
+        "Proprietary"
+    ],
+    
+    "pypi_classifiers": [
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Typing :: Typed"
+    ],
+    
+    "keywords": "python,library,modern,tooling",
+    
+    "_templates_suffix": ".jinja",
+    "_copy_without_render": [
+        "*.jpg",
+        "*.png", 
+        "*.gif",
+        "*.ico",
+        "*.svg"
+    ]
+}

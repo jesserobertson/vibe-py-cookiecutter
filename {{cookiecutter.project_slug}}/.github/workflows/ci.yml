@@ -1,0 +1,171 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ "{{" }} matrix.os {{ "}}" }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["{{ cookiecutter.python_version }}"]
+        
+{%- if cookiecutter.database_backend != 'none' %}
+    services:
+{%- if cookiecutter.database_backend == 'mongodb' %}
+      mongodb:
+        image: mongo:7.0
+        env:
+          MONGO_INITDB_DATABASE: {{ cookiecutter.package_name }}_test
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+{%- elif cookiecutter.database_backend == 'postgresql' %}
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: {{ cookiecutter.package_name }}_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+{%- endif %}
+{%- endif %}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.34.0
+        cache: true
+
+    - name: Install dependencies
+      run: pixi install
+
+    - name: Run unit tests with coverage
+      run: pixi run test unit
+
+{%- if cookiecutter.database_backend == 'mongodb' %}
+    - name: Wait for MongoDB to be ready
+      run: |
+        echo "Waiting for MongoDB to be ready..."
+        until mongosh --eval "print(\"waited for connection\")" > /dev/null 2>&1; do
+          echo "Waiting for MongoDB connection..."
+          sleep 2
+        done
+        echo "MongoDB is ready!"
+
+    - name: Set up MongoDB test data
+      run: |
+        echo "Setting up test data..."
+        mongosh {{ cookiecutter.package_name }}_test --eval "
+          db.test_collection.insertMany([
+            {_id: 'test1', name: 'Test Document 1', active: true},
+            {_id: 'test2', name: 'Test Document 2', active: false},
+            {_id: 'test3', name: 'Test Document 3', active: true}
+          ]);
+          print('Test data inserted successfully');
+        "
+{%- elif cookiecutter.database_backend == 'postgresql' %}
+    - name: Set up PostgreSQL test data
+      run: |
+        echo "Setting up test data..."
+        PGPASSWORD=postgres psql -h localhost -U postgres -d {{ cookiecutter.package_name }}_test -c "
+          CREATE TABLE IF NOT EXISTS test_table (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            active BOOLEAN DEFAULT TRUE
+          );
+          INSERT INTO test_table (name, active) VALUES 
+            ('Test Record 1', TRUE),
+            ('Test Record 2', FALSE),
+            ('Test Record 3', TRUE);
+        "
+{%- endif %}
+
+{%- if cookiecutter.database_backend != 'none' %}
+    - name: Run integration tests with coverage
+      env:
+{%- if cookiecutter.database_backend == 'mongodb' %}
+        MONGODB_URI: mongodb://localhost:27017
+{%- elif cookiecutter.database_backend == 'postgresql' %}
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/{{ cookiecutter.package_name }}_test
+{%- endif %}
+      run: pixi run test integration
+{%- endif %}
+
+    - name: Run all tests (including{% if cookiecutter.documentation_tool == 'mkdocs-material' %} doctests{% endif %})
+      env:
+{%- if cookiecutter.database_backend == 'mongodb' %}
+        MONGODB_URI: mongodb://localhost:27017
+{%- elif cookiecutter.database_backend == 'postgresql' %}
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/{{ cookiecutter.package_name }}_test
+{%- endif %}
+      run: pixi run test all
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ "{{" }} secrets.CODECOV_TOKEN {{ "}}" }}
+        file: ./coverage.xml
+        flags: unittests{% if cookiecutter.database_backend != 'none' %},integration{% endif %}
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.34.0
+        cache: true
+
+    - name: Install dependencies
+      run: pixi install
+
+    - name: Run all quality checks
+      run: pixi run quality check
+
+{%- if cookiecutter.documentation_tool == 'mkdocs-material' %}
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.34.0
+        cache: true
+
+    - name: Install dependencies
+      run: pixi install
+
+    - name: Build documentation
+      run: pixi run docs build
+
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: site/
+{%- endif %}

@@ -1,0 +1,49 @@
+{%- if cookiecutter.database_backend != 'none' and cookiecutter.include_docker == 'yes' -%}
+services:
+{%- if cookiecutter.database_backend == 'mongodb' %}
+  mongodb:
+    image: mongo:7.0
+    container_name: {{ cookiecutter.project_slug.replace('-', '') }}-test-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      # No authentication for test database
+      MONGO_INITDB_DATABASE: {{ cookiecutter.package_name }}_test
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  mongodb_data:
+    driver: local
+{%- elif cookiecutter.database_backend == 'postgresql' %}
+  postgres:
+    image: postgres:15
+    container_name: {{ cookiecutter.project_slug.replace('-', '') }}-test-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: {{ cookiecutter.package_name }}_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:
+    driver: local
+{%- endif %}
+{%- endif -%}

@@ -1,0 +1,225 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ cookiecutter.package_name }}"
+version = "{{ cookiecutter.version }}"
+description = "{{ cookiecutter.project_description }}"
+authors = [{name = "{{ cookiecutter.author_name }}", email = "{{ cookiecutter.author_email }}"}]
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "{{ cookiecutter.license }}"}
+keywords = [{% for keyword in cookiecutter.keywords.split(',') %}"{{ keyword.strip() }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+classifiers = [
+{%- for classifier in cookiecutter.pypi_classifiers %}
+    "{{ classifier }}",
+{%- endfor %}
+]
+
+dependencies = [
+    "tenacity>=9.1.2,<10",
+{%- if cookiecutter.database_backend == "mongodb" %}
+    "pymongo>=4.0.0,<5",
+{%- if cookiecutter.use_async == "yes" %}
+    "motor>=3.3.0,<4",
+{%- endif %}
+{%- endif %}
+{%- if cookiecutter.database_backend == "postgresql" %}
+    "psycopg2>=2.9.0,<3",
+{%- if cookiecutter.use_async == "yes" %}
+    "asyncpg>=0.29.0,<1",
+{%- endif %}
+{%- endif %}
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov>=6.2.1,<7",
+    "coverage>=7.0.0,<8",
+{%- if cookiecutter.use_hypothesis == "yes" %}
+    "hypothesis",
+{%- endif %}
+{%- if cookiecutter.use_async == "yes" %}
+    "pytest-asyncio",
+{%- endif %}
+    "mypy",
+    "ruff",
+    "pre-commit>=4.2.0,<5",
+    "python-build>=1.2.2.post1,<2",
+    "twine>=6.1.0,<7",
+]
+{%- if cookiecutter.documentation_tool == "mkdocs-material" %}
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings",
+    "mkdocstrings-python",
+]
+{%- elif cookiecutter.documentation_tool == "sphinx" %}
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-autodoc-typehints",
+]
+{%- endif %}
+all = ["{{ cookiecutter.package_name }}[dev,docs]"]
+
+[project.urls]
+Homepage = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}"
+{%- if cookiecutter.documentation_tool == "mkdocs-material" %}
+Documentation = "https://{{ cookiecutter.github_username }}.github.io/{{ cookiecutter.project_slug }}/"
+{%- endif %}
+Repository = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}"
+Issues = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["{{ cookiecutter.package_name }}*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings  
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG001", # unused-function-args
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "TID",    # flake8-tidy-imports
+    "Q",      # flake8-quotes
+    "FLY",    # flynt
+    "PERF",   # perflint
+    "RUF",    # ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long, handled by black
+    "B008",   # do not perform function calls in argument defaults
+    "C901",   # complexity
+    "W191",   # indentation contains tabs
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+known-first-party = ["{{ cookiecutter.package_name }}"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+{%- if cookiecutter.database_backend == "mongodb" %}
+[[tool.mypy.overrides]]
+module = [
+    "pymongo.*",
+{%- if cookiecutter.use_async == "yes" %}
+    "motor.*",
+{%- endif %}
+]
+ignore_missing_imports = true
+{%- endif %}
+
+{%- if cookiecutter.database_backend == "postgresql" %}
+[[tool.mypy.overrides]]
+module = [
+    "psycopg2.*",
+{%- if cookiecutter.use_async == "yes" %}
+    "asyncpg.*",
+{%- endif %}
+]
+ignore_missing_imports = true
+{%- endif %}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config", 
+    "--verbose",
+{%- if cookiecutter.documentation_tool == "mkdocs-material" %}
+    "--doctest-modules",
+    "--doctest-glob=*.md",
+{%- endif %}
+]
+pythonpath = ["."]
+{%- if cookiecutter.documentation_tool == "mkdocs-material" %}
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
+{%- endif %}
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests", 
+    "unit: marks tests as unit tests",
+{%- if cookiecutter.use_hypothesis == "yes" %}
+    "hypothesis: marks tests as hypothesis property-based tests",
+{%- endif %}
+{%- if cookiecutter.documentation_tool == "mkdocs-material" %}
+    "doctest: marks tests as doctests from documentation",
+{%- endif %}
+]
+
+[tool.coverage.run]
+source = ["{{ cookiecutter.package_name }}"]
+branch = true
+omit = [
+    "*/tests/*", 
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/.*",
+    "*/.pixi/*",
+    "*/build/*",
+    "*/dist/*",
+    "*/site/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError", 
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "if TYPE_CHECKING:",
+]
+show_missing = true
+precision = 2
+skip_covered = false
+skip_empty = false
+
+[tool.coverage.html]
+directory = "htmlcov"
+title = "{{ cookiecutter.project_name }} Coverage Report"
+
+[tool.coverage.xml]
+output = "coverage.xml"
