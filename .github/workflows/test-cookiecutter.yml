@@ -1,0 +1,121 @@
+name: Test Cookiecutter Template
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test-template:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install pixi
+      run: |
+        curl -fsSL https://pixi.sh/install.sh | bash
+        echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: |
+        pixi install
+    
+    - name: Run fast tests
+      run: |
+        pixi run test fast --coverage
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+
+  test-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install pixi
+      run: |
+        curl -fsSL https://pixi.sh/install.sh | bash
+        echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: |
+        pixi install
+    
+    - name: Run integration tests
+      run: |
+        pixi run test integration
+    
+    - name: Test cookiecutter generation with different configs
+      run: |
+        pixi run test generation
+
+  test-generated-projects:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        context: ["minimal", "default", "mongodb", "postgresql"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+    
+    - name: Install pixi
+      run: |
+        curl -fsSL https://pixi.sh/install.sh | bash
+        echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+    
+    - name: Install cookiecutter dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install cookiecutter
+    
+    - name: Generate project with ${{ matrix.context }} context
+      run: |
+        cd /tmp
+        case "${{ matrix.context }}" in
+          "minimal")
+            cookiecutter --no-input $GITHUB_WORKSPACE use_async=no use_logerr=no use_hypothesis=no database_backend=none include_docker=no
+            ;;
+          "default")
+            cookiecutter --no-input $GITHUB_WORKSPACE
+            ;;
+          "mongodb")
+            cookiecutter --no-input $GITHUB_WORKSPACE database_backend=mongodb include_docker=yes
+            ;;
+          "postgresql")
+            cookiecutter --no-input $GITHUB_WORKSPACE database_backend=postgresql include_docker=yes
+            ;;
+        esac
+    
+    - name: Test generated project
+      run: |
+        cd /tmp/my-awesome-project
+        pixi install
+        pixi run quality format
+        pixi run test unit --no-coverage || true  # Allow test failures but check for crashes

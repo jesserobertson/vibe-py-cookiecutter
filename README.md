@@ -193,19 +193,73 @@ The template includes GitHub Actions workflows for:
 
 This template is licensed under the MIT License. Generated projects can use any supported license.
 
+## Template Testing
+
+This cookiecutter template includes a comprehensive testing harness using pytest-cookies.
+
+### Install Test Dependencies
+
+```bash
+# Using pixi (recommended)
+pixi install
+
+# Or using pip
+pip install -e .[test]
+```
+
+### Run Template Tests
+
+```bash
+# Run all tests
+pixi run test all
+
+# Run only fast tests (skip integration/slow tests)
+pixi run test fast
+
+# Run integration tests
+pixi run test integration
+
+# Run specific test categories
+pixi run test generation    # Cookiecutter generation tests
+pixi run test scripts      # Script functionality tests
+
+# Check code quality
+pixi run quality check     # All quality checks
+pixi run quality lint      # Linting only
+pixi run quality format --check  # Format checking
+```
+
+### Test Categories
+
+- **Generation Tests**: Test cookiecutter template generation with different configurations
+- **Project Functionality Tests**: Test that generated projects work correctly  
+- **Script Functionality Tests**: Test the sh-based script functionality specifically
+
+The testing harness validates:
+- ✅ Template generation with various configurations
+- ✅ Generated project structure and file existence
+- ✅ Python syntax validation of all generated files
+- ✅ Script functionality with sh library integration
+- ✅ Integration workflows (install, format, lint, test)
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run the template generation test:
+4. Run the template tests:
+   ```bash
+   pixi run test all
+   pixi run quality check
+   ```
+5. Test manual generation:
    ```bash
    cookiecutter . --no-input
    cd my-awesome-project
    pixi install
    pixi run check-all
    ```
-5. Submit a pull request
+6. Submit a pull request
 
 ## Acknowledgments
 
