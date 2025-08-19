@@ -5,7 +5,6 @@ Database management for testing.
 Handles {{ cookiecutter.database_backend }} test container lifecycle.
 """
 
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -14,6 +13,8 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.status import Status
+
+from utils import run_command
 
 app = typer.Typer(
     name="test-db",
@@ -33,19 +34,6 @@ DB_CONTAINER = "{{ cookiecutter.project_slug.replace('-', '') }}-test-postgres"
 {%- endif %}
 
 
-def run_command(cmd: list[str], capture_output: bool = False, check: bool = True) -> subprocess.CompletedProcess:
-    """Run a shell command with proper error handling."""
-    try:
-        if capture_output:
-            return subprocess.run(cmd, capture_output=True, text=True, check=check, cwd=PROJECT_ROOT)
-        else:
-            return subprocess.run(cmd, check=check, cwd=PROJECT_ROOT)
-    except subprocess.CalledProcessError as e:
-        if not capture_output:
-            console.print(f"[red]❌ Command failed: {' '.join(cmd)}[/red]")
-        if capture_output and check:
-            raise
-        return e
 
 
 {%- if cookiecutter.database_backend == 'mongodb' %}
@@ -56,7 +44,7 @@ def is_mongodb_ready() -> bool:
             "docker", "exec", DB_CONTAINER,
             "mongosh", "--eval", "db.adminCommand('ping')"
         ], capture_output=True, check=False)
-        return result.returncode == 0
+        return result.success
     except Exception:
         return False
 
@@ -82,7 +70,7 @@ def is_postgres_ready() -> bool:
             "docker", "exec", DB_CONTAINER,
             "pg_isready", "-h", "localhost", "-p", "5432"
         ], capture_output=True, check=False)
-        return result.returncode == 0
+        return result.success
     except Exception:
         return False
 
@@ -181,7 +169,7 @@ def ensure() -> None:
     try:
         # Check if already healthy
         result = run_command(["python", __file__, "healthcheck"], check=False)
-        if result.returncode == 0:
+        if result.success:
             console.print("✅ {{ cookiecutter.database_backend.title() }} test database is already healthy")
             return
     except Exception:

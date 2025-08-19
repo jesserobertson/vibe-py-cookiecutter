@@ -4,7 +4,6 @@ Code quality management script with mypy, ruff, and coverage support.
 Unified interface for all code quality tasks.
 """
 
-import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
@@ -14,6 +13,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.status import Status
 from rich.table import Table
+
+from utils import run_command
 
 app = typer.Typer(
     name="quality",
@@ -28,20 +29,6 @@ PACKAGE_PATH = PROJECT_ROOT / "{{ cookiecutter.package_name }}"
 TESTS_PATH = PROJECT_ROOT / "tests"
 
 
-def run_command(cmd: list[str], capture_output: bool = False, check: bool = True) -> subprocess.CompletedProcess:
-    """Run a shell command with proper error handling."""
-    try:
-        if capture_output:
-            return subprocess.run(cmd, capture_output=True, text=True, check=check, cwd=PROJECT_ROOT)
-        else:
-            return subprocess.run(cmd, check=check, cwd=PROJECT_ROOT)
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]❌ Command failed: {' '.join(cmd)}[/red]")
-        if capture_output and e.stdout:
-            console.print(f"[yellow]STDOUT: {e.stdout}[/yellow]")
-        if capture_output and e.stderr:
-            console.print(f"[red]STDERR: {e.stderr}[/red]")
-        raise typer.Exit(1)
 
 
 @app.command()

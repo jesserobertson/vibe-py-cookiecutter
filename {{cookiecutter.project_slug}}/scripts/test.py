@@ -4,7 +4,6 @@ Testing management script with pytest{% if cookiecutter.database_backend != 'non
 Unified interface for all testing tasks including unit, integration{% if cookiecutter.database_backend != 'none' %}, and database management{% endif %}.
 """
 
-import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
@@ -13,6 +12,8 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.status import Status
+
+from utils import run_command
 
 {%- if cookiecutter.database_backend != 'none' %}
 # Import database management functionality
@@ -45,20 +46,6 @@ TESTS_DIR = PROJECT_ROOT / "tests"
 DOCS_DIR = PROJECT_ROOT / "docs"
 
 
-def run_command(cmd: list[str], capture_output: bool = False, check: bool = True) -> subprocess.CompletedProcess:
-    """Run a shell command with proper error handling."""
-    try:
-        if capture_output:
-            return subprocess.run(cmd, capture_output=True, text=True, check=check, cwd=PROJECT_ROOT)
-        else:
-            return subprocess.run(cmd, check=check, cwd=PROJECT_ROOT)
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]❌ Command failed: {' '.join(cmd)}[/red]")
-        if capture_output and e.stdout:
-            console.print(f"[yellow]STDOUT: {e.stdout}[/yellow]")
-        if capture_output and e.stderr:
-            console.print(f"[red]STDERR: {e.stderr}[/red]")
-        raise typer.Exit(1)
 
 
 @app.command()
@@ -198,7 +185,7 @@ def ensure() -> None:
     try:
         # Check if already healthy
         result = run_command(["python", "scripts/test_db.py", "healthcheck"], check=False)
-        if result.returncode == 0:
+        if result.success:
             console.print("✅ {{ cookiecutter.database_backend.title() }} test database is already healthy")
             return
     except Exception:
