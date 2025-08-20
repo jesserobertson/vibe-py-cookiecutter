@@ -24,6 +24,8 @@ pre-commit = ">=4.2.0,<5"
 # CLI tools
 typer = ">=0.9.0,<1"
 rich = ">=13.0.0,<14"
+
+[pypi-dependencies]
 sh = ">=2.0.0,<3"
 
 [environments]
@@ -31,12 +33,11 @@ default = ["dev"]
 dev = ["dev"]
 
 [tasks]
-
 # Unified task scripts (following cookiecutter pattern)
-quality = { cmd = "python scripts/quality.py", description = "Code quality management (linting, formatting, type checking, coverage)" }
+quality = { cmd = "python scripts/quality.py", description = "Code quality management (linting, formatting, type checking)" }
 dev = { cmd = "python scripts/dev.py", description = "Development environment management (setup, status, clean)" }
 test = { cmd = "python scripts/test.py", description = "Testing management (unit, integration, cookiecutter generation)" }
 
-# Unified operations (following cookiecutter pattern)
-clean = { cmd = "python scripts/test.py clean && python scripts/dev.py clean", description = "Clean all project artifacts (test, dev)" }
+# Unified operations
+clean = { cmd = "python scripts/test.py clean && python scripts/dev.py clean", description = "Clean all project artifacts" }
 check-all = { cmd = "python scripts/test.py all && python scripts/quality.py check", description = "Run comprehensive checks (all tests + quality)" }
